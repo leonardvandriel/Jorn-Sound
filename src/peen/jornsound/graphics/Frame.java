@@ -38,8 +38,8 @@ public class Frame extends JFrame {
 		List<Generator> generators = new LinkedList<Generator>();
 		clips.add(new Clip(new SomeFunction()));
 		clips.add(new Clip(new SomeFunction()));
-		clips.add(new Clip(new SomeFunction()));
-		clips.add(new Clip(new SomeFunction()));
+//		clips.add(new Clip(new SomeFunction()));
+//		clips.add(new Clip(new SomeFunction()));
 		for (Clip clip : clips) {
 			generators.add(new StepLimiterGenerator(clip, .1));
 		}

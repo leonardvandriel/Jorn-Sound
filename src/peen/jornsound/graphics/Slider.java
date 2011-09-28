@@ -16,7 +16,7 @@ import peen.jornsound.generator.Clip;
 
 public class Slider extends JPanel {
 	private static final long serialVersionUID = 1L;
-	private static final double snapDistance = 4;
+	private static final double snapDistance = 10;
 	private List<Color> colors;
 	private Point min;
 	private Point max;
@@ -31,11 +31,13 @@ public class Slider extends JPanel {
 			colors.add(Color.getHSBColor(i / (float) clips.size(), 1, 1));
 		}
 		addMouseListener(new MouseAdapter() {
+			@Override
 			public void mousePressed(MouseEvent e) {
 				click(e);
 			}
 		});
 		addMouseMotionListener(new MouseMotionAdapter() {
+			@Override
 			public void mouseDragged(MouseEvent e) {
 				click(e);
 			}
@@ -69,13 +71,14 @@ public class Slider extends JPanel {
 		return null;
 	}
 
+	@Override
 	public void paint(Graphics g) {
 		g.setColor(Color.lightGray);
 		g.fillRect(0, 0, getWidth(), getHeight());
 		int i = 0;
 		for (Clip clip : clips) {
 			fillDot(g, new Point(clip.getGoalFrequency(), clip.getGoalPhase()), colors.get(i));
-			fillDot(g, new Point(clip.getFrequency(), clip.getPhase()), colors.get(i).darker());
+			fillDot(g, new Point(clip.getFrequency(), clip.getBasePhase()), colors.get(i).darker());
 			i++;
 		}
 	}
@@ -114,21 +117,30 @@ public class Slider extends JPanel {
 
 	private void snap(Clip clip) {
 		Coord coord = transformToWindow(new Point(clip.getGoalFrequency(), clip.getGoalPhase()));
-		double min = snapDistance;
-		Clip result = null;
+		double minx = snapDistance;
+		double miny = snapDistance;
+		Clip resultx = null;
+		Clip resulty = null;
 		for (Clip cl : clips) {
 			if (!clip.equals(cl)) {
 				Coord c = transformToWindow(new Point(cl.getGoalFrequency(), cl.getGoalPhase()));
-				double distance = Math.sqrt((coord.x - c.x) * (coord.x - c.x) + (coord.y - c.y) * (coord.y - c.y));
-				if (min > distance) {
-					min = distance;
-					result = cl;
+				double distancex = Math.abs(coord.x - c.x);
+				double distancey = Math.abs(coord.y - c.y);
+				if (minx > distancex) {
+					minx = distancex;
+					resultx = cl;
+				}
+				if (miny > distancey) {
+					miny = distancey;
+					resulty = cl;
 				}
 			}
 		}
-		if (result != null) {
-			clip.setGoalFrequency(result.getGoalFrequency());
-			clip.setGoalPhase(result.getGoalPhase());
+		if (resultx != null) {
+			clip.setGoalFrequency(resultx.getGoalFrequency());
+		}
+		if (resulty != null) {
+			clip.setGoalPhase(resulty.getGoalPhase());
 		}
 	}
 

@@ -4,10 +4,10 @@ import peen.jornsound.function.Function;
 
 public class Clip implements Generator {
 	private static final double EPSILON = 0.0000001;
-	private static final double MAX_FREQUENCY_PER_SECOND = 10;
+	private static final double MAX_FREQUENCY_PER_SECOND = 1;
 	private Function function;
 	private double goalFrequency = 1;
-	private double goalPhase;
+	private double goalBasePhase;
 	private double frequency = 1;
 	private double phase;
 	private double totalTime;
@@ -16,40 +16,41 @@ public class Clip implements Generator {
 		this.function = function;
 	}
 
-	private int i;
-
 	public double generate(double timeStep) {
-
-		double currentPhase = phase + frequency * totalTime;
-		currentPhase -= Math.floor(currentPhase);
-		double currentGoalPhase = goalPhase + goalFrequency * totalTime;
-		currentGoalPhase -= Math.floor(currentGoalPhase);
+		double goalPhase = goalBasePhase + goalFrequency * totalTime;
+		goalPhase -= Math.floor(goalPhase);
 
 		double df = goalFrequency - frequency;
-		double dp = currentGoalPhase - currentPhase;
-
+		double dp = goalPhase - phase;
+		
+		if (Math.abs(df) < 1.1 * MAX_FREQUENCY_PER_SECOND * timeStep &&
+				Math.abs(dp) < 1.1 * goalFrequency * timeStep) {
+			// if snapping cannot be heard, snap
+			frequency = goalFrequency;
+			phase = goalPhase + frequency * timeStep;
+		} else {
+			// change the frequency at a constant rate
+			double frequencyPerSecond = getFrequencyPerSecondOld(df, dp);
+			double lastFrequency = frequency;
+			frequency += frequencyPerSecond * timeStep;
+			phase += (lastFrequency + frequency) / 2 * timeStep;
+		}
+		phase -= Math.floor(phase);
+		totalTime += timeStep;
+		
+		return function.get(phase);
+	}
+	
+	public double getFrequencyPerSecondSlowDown(double df, double dp) {
+		double result = getFrequencyPerSecondOld(df, dp);
 		double sdf = 5 * df;
 		double sdp = 500 * (dp < 0.5 ? dp : dp - 1);
 		double off = Math.sqrt(sdf * sdf + sdp * sdp);
-
-		double freqPerSecond = getFrequencyPerSecond(df, dp);
-		freqPerSecond *= Math.min(1, off);
-		if (i++ % 10000 == 0) {
-			System.out.println(String.format("%2.2f  %2.2f-%2.2f  %2.2f  %2.2f  %2.2f-%2.2f",
-					Double.valueOf(totalTime), Double.valueOf(df), Double.valueOf(dp), Double.valueOf(off),
-					Double.valueOf(freqPerSecond), Double.valueOf(frequency), Double.valueOf(currentPhase)));
-		}
-		frequency += freqPerSecond * timeStep;
-		currentPhase += frequency * timeStep;
-		totalTime += timeStep;
-
-		phase = currentPhase - frequency * totalTime;
-		phase -= Math.floor(phase);
-
-		return function.get(currentPhase - Math.floor(currentPhase));
+		result *= Math.min(1, off);
+		return result;
 	}
 
-	public static double getFrequencyPerSecond(double df, double dp) {
+	public static double getFrequencyPerSecondOld(double df, double dp) {
 		double sign = df < 0 ? -1 : 1;
 		double dpx = df * df / 2 / MAX_FREQUENCY_PER_SECOND;
 		dp *= -sign;
@@ -75,7 +76,7 @@ public class Clip implements Generator {
 	}
 
 	public void setGoalPhase(double phase) {
-		this.goalPhase = phase - Math.floor(phase);
+		this.goalBasePhase = phase - Math.floor(phase);
 	}
 
 	public double getGoalFrequency() {
@@ -83,14 +84,15 @@ public class Clip implements Generator {
 	}
 
 	public double getGoalPhase() {
-		return goalPhase;
+		return goalBasePhase;
 	}
 
 	public double getFrequency() {
 		return frequency;
 	}
 
-	public double getPhase() {
-		return phase;
+	public double getBasePhase() {
+		double basePhase = phase - frequency * totalTime;
+		return basePhase - Math.floor(basePhase);
 	}
 }

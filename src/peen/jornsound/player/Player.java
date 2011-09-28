@@ -14,7 +14,7 @@ import peen.jornsound.graphics.SleepListener;
 public class Player {
 	private Generator generator;
 	private volatile boolean stop;
-	private List<SleepListener> listenerList = new LinkedList<SleepListener>();;
+	private List<SleepListener> listenerList = new LinkedList<SleepListener>();
 
 	public Player(Generator generators) {
 		this.generator = generators;
@@ -43,7 +43,7 @@ public class Player {
 		stop = false;
 		while (!stop) {
 			int availableForPlay = line.getBufferSize() - line.available();
-			System.out.println(line.getLineInfo() +" "+ line.getBufferSize() + " " + line.available());
+//			System.out.println(line.getLineInfo() +" "+ line.getBufferSize() + " " + line.available());
 			while (availableForPlay > 40000) {
 				for (SleepListener listener : listenerList) {
 					listener.onSleep();

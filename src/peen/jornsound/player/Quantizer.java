@@ -7,7 +7,7 @@ public class Quantizer {
 	private static final int MAX = 0x8000;
 	private static final float STEP_SIZE = 1.f / 44100;
 
-	public void quantize(Generator generator, byte[] buffer, int length) {
+	public void quantize(Generator generator, byte[] buffer, @SuppressWarnings("unused") int length) {
 		for (int i = 0; i < buffer.length; i += 2) {
 			float value = (float) generator.generate(STEP_SIZE);
 			if (value > 1) {
