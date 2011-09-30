@@ -26,7 +26,8 @@ public class Frame extends JFrame {
 	private Slider slider;
 	private JLabel frequencyLabel;
 	private JLabel phaseLabel;
-
+    private JButton switchButton;
+    
 	public Frame() {
 		init();
 		initComponents();
@@ -37,7 +38,7 @@ public class Frame extends JFrame {
 		clips = new LinkedList<Clip>();
 		List<Generator> generators = new LinkedList<Generator>();
 		clips.add(new Clip(new SomeFunction()));
-		clips.add(new Clip(new SomeFunction()));
+//		clips.add(new Clip(new SomeFunction()));
 //		clips.add(new Clip(new SomeFunction()));
 //		clips.add(new Clip(new SomeFunction()));
 		for (Clip clip : clips) {
@@ -84,20 +85,19 @@ public class Frame extends JFrame {
 
 	private JPanel getLeftPanel() {
 		JPanel result = new JPanel(new GridLayout(0, 1));
-		JButton startButton = new JButton("Start");
-		startButton.addActionListener(new ActionListener() {
+		switchButton = new JButton("Start");
+		switchButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				player.start();
+				if(player.isPlaying()) {
+					switchButton.setText("Start");
+					player.stop();
+				} else {
+					switchButton.setText("Stop");
+					player.start();
+				}
 			}
 		});
-		result.add(startButton);
-		JButton stopButton = new JButton("Stop");
-		stopButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				player.stop();
-			}
-		});
-		result.add(stopButton);
+		result.add(switchButton);
 		frequencyLabel = new JLabel();
 		result.add(frequencyLabel);
 		phaseLabel = new JLabel();

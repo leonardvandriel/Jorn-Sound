@@ -13,7 +13,7 @@ import peen.jornsound.graphics.SleepListener;
 
 public class Player {
 	private Generator generator;
-	private volatile boolean stop;
+	private volatile boolean stop = true;
 	private List<SleepListener> listenerList = new LinkedList<SleepListener>();
 
 	public Player(Generator generators) {
@@ -64,5 +64,9 @@ public class Player {
 
 	public void addSleepListener(SleepListener listener) {
 		listenerList.add(listener);
+	}
+	
+	public boolean isPlaying() {
+		return !stop;
 	}
 }
