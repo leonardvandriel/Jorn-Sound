@@ -13,22 +13,28 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import peen.jornsound.generator.Clip;
+import peen.jornsound.generator.Generator;
 
-public class Slider extends JPanel {
+public class Slider extends JPanel implements Generator {
 	private static final long serialVersionUID = 1L;
 	private static final double snapDistance = 10;
 	private List<Color> colors;
 	private Point min;
 	private Point max;
-	private List<Clip> clips;
+	private List<Clip> controlClips;
+	private List<Clip> drawClips;
+	private double totalTime;
 
-	public Slider(Point min, Point max, List<Clip> clips) {
+	public Slider(Point min, Point max, List<Clip> controlClips, List<Clip> otherClips) {
 		this.min = min;
 		this.max = max;
-		this.clips = clips;
-		colors = new ArrayList<Color>(clips.size());
-		for (int i = 0; i < clips.size(); i++) {
-			colors.add(Color.getHSBColor(i / (float) clips.size(), 1, 1));
+		this.controlClips = controlClips;
+		drawClips = new ArrayList<Clip>();
+		drawClips.addAll(controlClips);
+		drawClips.addAll(otherClips);
+		colors = new ArrayList<Color>(drawClips.size());
+		for (int i = 0; i < drawClips.size(); i++) {
+			colors.add(Color.getHSBColor(i / (float) drawClips.size(), 1, 1));
 		}
 		addMouseListener(new MouseAdapter() {
 			@Override
@@ -43,13 +49,18 @@ public class Slider extends JPanel {
 			}
 		});
 	}
+	
+	public double generate(double timeStep) {
+		totalTime += timeStep;
+		return 0;
+	}
 
 	private void click(MouseEvent e) {
 		Clip clip = getClipWith(e);
 		if (clip != null) {
 			Point p = transformFromWindow(new Coord(e.getX(), e.getY()));
-			clip.setGoalFrequency(p.x);
-			clip.setGoalPhase(p.y);
+			clip.setFrequency(p.x);
+			setNormalPhase(clip, p.y);
 			snap(clip);
 			repaint();
 			fireStateChanged();
@@ -65,8 +76,8 @@ public class Slider extends JPanel {
 		} else if (e.isAltDown()) {
 			index = 3;
 		}
-		if (index < clips.size()) {
-			return clips.get(index);
+		if (index < controlClips.size()) {
+			return controlClips.get(index);
 		}
 		return null;
 	}
@@ -76,9 +87,8 @@ public class Slider extends JPanel {
 		g.setColor(Color.lightGray);
 		g.fillRect(0, 0, getWidth(), getHeight());
 		int i = 0;
-		for (Clip clip : clips) {
-			fillDot(g, new Point(clip.getGoalFrequency(), clip.getGoalPhase()), colors.get(i));
-			fillDot(g, new Point(clip.getFrequency(), clip.getBasePhase()), colors.get(i).darker());
+		for (Clip clip : drawClips) {
+			fillDot(g, new Point(clip.getFrequency(), getNormalPhase(clip)), colors.get(i).darker());
 			i++;
 		}
 	}
@@ -116,14 +126,14 @@ public class Slider extends JPanel {
 	}
 
 	private void snap(Clip clip) {
-		Coord coord = transformToWindow(new Point(clip.getGoalFrequency(), clip.getGoalPhase()));
+		Coord coord = transformToWindow(new Point(clip.getFrequency(), getNormalPhase(clip)));
 		double minx = snapDistance;
 		double miny = snapDistance;
 		Clip resultx = null;
 		Clip resulty = null;
-		for (Clip cl : clips) {
+		for (Clip cl : controlClips) {
 			if (!clip.equals(cl)) {
-				Coord c = transformToWindow(new Point(cl.getGoalFrequency(), cl.getGoalPhase()));
+				Coord c = transformToWindow(new Point(cl.getFrequency(), getNormalPhase(cl)));
 				double distancex = Math.abs(coord.x - c.x);
 				double distancey = Math.abs(coord.y - c.y);
 				if (minx > distancex) {
@@ -137,11 +147,20 @@ public class Slider extends JPanel {
 			}
 		}
 		if (resultx != null) {
-			clip.setGoalFrequency(resultx.getGoalFrequency());
+			clip.setFrequency(resultx.getFrequency());
 		}
 		if (resulty != null) {
-			clip.setGoalPhase(resulty.getGoalPhase());
+			setNormalPhase(clip, getNormalPhase(resulty));
 		}
 	}
 
+	private double getNormalPhase(Clip clip) {
+		double p = clip.getPhase() - clip.getFrequency() * totalTime;
+		return p - Math.floor(p);
+	}
+	
+	private void setNormalPhase(Clip clip, double normalPhase) {
+		double p = normalPhase + clip.getFrequency() * totalTime;
+		clip.setPhase(p - Math.floor(p));
+	}
 }

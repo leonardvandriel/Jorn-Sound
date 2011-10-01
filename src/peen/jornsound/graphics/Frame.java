@@ -12,22 +12,28 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import peen.jornsound.function.SomeFunction;
+import peen.jornsound.function.BeatFunction;
+import peen.jornsound.function.Function;
+import peen.jornsound.function.ZeroFunction;
 import peen.jornsound.generator.Clip;
 import peen.jornsound.generator.Generator;
 import peen.jornsound.generator.MixerGenerator;
 import peen.jornsound.generator.StepLimiterGenerator;
+import peen.jornsound.phaser.ChasingPhaser;
+import peen.jornsound.phaser.MonotonePhaser;
 import peen.jornsound.player.Player;
 
 public class Frame extends JFrame {
 	private static final long serialVersionUID = 1L;
 	private static final int clipCount = 2;
 	private Player player;
-	private List<Clip> clips;
+	private List<Clip> monoClips;
+	private List<Clip> chaseClips;
 	private Slider slider;
 	private JLabel frequencyLabel;
 	private JLabel phaseLabel;
 	private JButton switchButton;
+	private List<Generator> generators;
 
 	public Frame() {
 		init();
@@ -36,42 +42,36 @@ public class Frame extends JFrame {
 	}
 
 	private void init() {
-		clips = new LinkedList<Clip>();
-		List<Generator> generators = new LinkedList<Generator>();
+		monoClips = new LinkedList<Clip>();
+		chaseClips = new LinkedList<Clip>();
+		Function beat = new BeatFunction();
+		Function silent = new ZeroFunction();
+		generators = new LinkedList<Generator>();
 		for (int i = 0; i < clipCount; i++) {
-			clips.add(new Clip(new SomeFunction()));
+			// create constant frequency clip
+			MonotonePhaser monoPhaser = new MonotonePhaser(1 + i, .1 * (1 + i));
+			Clip monoClip = new Clip(silent, monoPhaser);
+			monoClips.add(monoClip);
+			generators.add(new StepLimiterGenerator(monoClip, .1));
+			// create chasing clip
+			ChasingPhaser chasePhaser = new ChasingPhaser(monoClip);
+			Clip chaseClip = new Clip(beat, chasePhaser);
+			chaseClips.add(chaseClip);
+			generators.add(new StepLimiterGenerator(chaseClip, .1));
 		}
-		for (Clip clip : clips) {
-			generators.add(new StepLimiterGenerator(clip, .1));
-		}
-		// clips[1].setGoalFrequency(clips[1].getGoalFrequency() * 2);
 		player = new Player(new MixerGenerator(generators));
-
 	}
 
 	private void initWindow() {
 		setSize(400, 300);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
-
-		// KeyStroke selectAllStroke = KeyStroke.getKeyStroke(KeyEvent.VK_A,
-		// MatchUtils.getOsCtrlKeyIntMask());
-		// KeyStroke copyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_C,
-		// MatchUtils.getOsCtrlKeyIntMask());
-		// getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(selectAllStroke,
-		// "SELECT_ALL");
-		// getRootPane().getActionMap().put("SELECT_ALL", new AbstractAction() {
-		// private static final long serialVersionUID = 1L;
-		//
-		// public void actionPerformed(ActionEvent e) {
-		// displayArea.selectAll();
-		// }
-		// });
 	}
 
 	private void initComponents() {
 		JPanel contentPanel = new JPanel(new BorderLayout());
 		add(getLeftPanel(), BorderLayout.WEST);
-		slider = new Slider(new Point(.1, 0), new Point(10, 1), clips);
+		slider = new Slider(new Point(.1, 0), new Point(10, 1), monoClips, chaseClips);
+		generators.add(slider);
 		player.addSleepListener(new SleepListener() {
 			public void onSleep() {
 				slider.repaint();
@@ -79,11 +79,6 @@ public class Frame extends JFrame {
 		});
 		contentPanel.add(slider, BorderLayout.CENTER);
 		add(contentPanel, BorderLayout.CENTER);
-	}
-
-	@SuppressWarnings("unused")
-	private float trim(float f) {
-		return (int) (f * 100) / 100.f;
 	}
 
 	private JPanel getLeftPanel() {
