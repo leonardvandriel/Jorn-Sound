@@ -43,7 +43,6 @@ public class Player {
 		stop = false;
 		while (!stop) {
 			int availableForPlay = line.getBufferSize() - line.available();
-//			System.out.println(line.getLineInfo() +" "+ line.getBufferSize() + " " + line.available());
 			while (availableForPlay > 40000) {
 				for (SleepListener listener : listenerList) {
 					listener.onSleep();
@@ -51,7 +50,7 @@ public class Player {
 				Thread.sleep(1);
 				availableForPlay = line.getBufferSize() - line.available();
 			}
-			q.quantize(generator, buffer, buffer.length);
+			q.quantize(generator, buffer);
 			line.write(buffer, 0, buffer.length);
 		}
 		line.drain();
