@@ -9,7 +9,6 @@ import javax.sound.sampled.DataLine;
 import javax.sound.sampled.SourceDataLine;
 
 import peen.jornsound.generator.Generator;
-import peen.jornsound.graphics.SleepListener;
 
 public class Player {
 	private Generator generator;
@@ -45,7 +44,7 @@ public class Player {
 			int availableForPlay = line.getBufferSize() - line.available();
 			while (availableForPlay > 40000) {
 				for (SleepListener listener : listenerList) {
-					listener.onSleep();
+					listener.onSleep(this);
 				}
 				Thread.sleep(1);
 				availableForPlay = line.getBufferSize() - line.available();

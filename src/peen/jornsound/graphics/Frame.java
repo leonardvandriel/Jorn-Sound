@@ -22,6 +22,7 @@ import peen.jornsound.generator.StepLimiterGenerator;
 import peen.jornsound.phaser.ChasingPhaser;
 import peen.jornsound.phaser.MonotonePhaser;
 import peen.jornsound.player.Player;
+import peen.jornsound.player.SleepListener;
 
 public class Frame extends JFrame {
 	private static final long serialVersionUID = 1L;
@@ -73,7 +74,8 @@ public class Frame extends JFrame {
 		slider = new Slider(new Point(.1, 0), new Point(10, 1), monoClips, chaseClips);
 		generators.add(slider);
 		player.addSleepListener(new SleepListener() {
-			public void onSleep() {
+			@Override
+			public void onSleep(@SuppressWarnings("hiding") Player player) {
 				slider.repaint();
 			}
 		});
